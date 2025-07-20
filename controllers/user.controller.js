@@ -102,46 +102,86 @@ exports.login = async (req, res) => {
 // Login for Admin (role = 1)
 exports.adminlogin = async (req, res) => {
   try {
-    const { email, password } = req.body;
-
-    const user = await User.findOne({
-      where: {
-        email, role: { [Op.in]: [1, 3] } 
+    const { email, password, name, is_sub_admin } = req.body;
+    if (is_sub_admin === true) {
+      const user = await User.findOne({
+        where: {
+          name,
+          is_sub_admin: true
+        }
+      });
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          status: 404,
+          message: 'Admin not found or role mismatch',
+        });
       }
-    });
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        status: 404,
-        message: 'Admin not found or role mismatch',
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return res.status(401).json({
+          success: false,
+          status: 401,
+          message: 'Invalid credentials',
+        });
+      }
+
+      await user.update({ last_login: new Date() });
+
+      const token = jwtHelper.generateToken(user.id, user.role);
+
+      return res.status(200).json({
+        success: true,
+        status: 200,
+        message: 'Login successful',
+        token,
+        data: {
+          id: user.id,
+          name: user.name,
+          role: user.role,
+        },
+      });
+    } else {
+      const user = await User.findOne({
+        where: {
+          email, role: 3
+        }
+      });
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          status: 404,
+          message: 'Admin not found or role mismatch',
+        });
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return res.status(401).json({
+          success: false,
+          status: 401,
+          message: 'Invalid credentials',
+        });
+      }
+
+      await user.update({ last_login: new Date() });
+
+      const token = jwtHelper.generateToken(user.id, user.role);
+
+      return res.status(200).json({
+        success: true,
+        status: 200,
+        message: 'Login successful',
+        token,
+        data: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
       });
     }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        status: 401,
-        message: 'Invalid credentials',
-      });
-    }
-
-    await user.update({ last_login: new Date() });
-
-    const token = jwtHelper.generateToken(user.id, user.role);
-
-    return res.status(200).json({
-      success: true,
-      status: 200,
-      message: 'Login successful',
-      token,
-      data: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
   } catch (err) {
     console.error(err);
     res.status(500).json({
@@ -298,12 +338,20 @@ exports.createSubadmin = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    const checkName = await User.findOne({ where: { name, is_sub_admin: true } })
+    if (checkName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Subadmin with this name already exists',
+      });
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
     const subadmin = await User.create({
       name,
       email,
       password: hashedPassword,
-      role: 3 // Role 3 = Subadmin
+      role: 3,
+      is_sub_admin: true
     });
 
     res.status(201).json({
