@@ -16,8 +16,8 @@ router.post('/admin/change-password',verifyAdminToken, userController.resetChang
 // Protected routes
 router.get('/admin/profile', verifyAdminToken, userController.getProfile);
 router.get('/user/profile', verifyUserToken, userController.getProfile);
-router.get('/admin/access', verifyUserToken, userController.access);
 
+router.get('/admin/access', verifyAdminToken, userController.access);
 router.post('/admin/create-subadmin',verifyAdminToken, userController.createSubadmin);
 router.patch('/admin/change-subadmin-password/:id',verifyAdminToken, userController.changeSubadminPassword);
 
