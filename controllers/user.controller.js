@@ -223,6 +223,36 @@ exports.getProfile = async (req, res) => {
   }
 };
 
+exports.access = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ['password', 'reset_token'] },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        status: 404,
+        message: 'User not found',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      status: 200,
+      message: 'access_json fetched successfully',
+      data: user.access_json,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      status: 500,
+      message: 'Failed to fetch access_json',
+    });
+  }
+};
+
 
 exports.forgetPassword = async (req, res) => {
   try {
@@ -336,7 +366,7 @@ exports.resetChangePassword = async (req, res) => {
 
 exports.createSubadmin = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password ,access_json } = req.body;
 
     const checkName = await User.findOne({ where: { name, is_sub_admin: true } })
     if (checkName) {
@@ -351,7 +381,8 @@ exports.createSubadmin = async (req, res) => {
       email,
       password: hashedPassword,
       role: 3,
-      is_sub_admin: true
+      is_sub_admin: true,
+      access_json
     });
 
     res.status(201).json({
@@ -367,10 +398,14 @@ exports.createSubadmin = async (req, res) => {
 exports.changeSubadminPassword = async (req, res) => {
   try {
     const { id } = req.params;
-    const { new_password } = req.body;
+    const { old_password, new_password } = req.body;
 
     const subadmin = await User.findOne({ where: { id, role: 3 } });
     if (!subadmin) return res.status(404).json({ success: false, message: 'Subadmin not found' });
+    const isMatch = await bcrypt.compare(old_password, subadmin.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: 'Old password is incorrect' });
+    }
 
     const hashedPassword = await bcrypt.hash(new_password, 10);
     await subadmin.update({ password: hashedPassword });

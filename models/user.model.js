@@ -13,5 +13,7 @@ module.exports = (sequelize) => {
     last_login: { type: DataTypes.DATE, allowNull: true },
     is_block: { type: DataTypes.BOOLEAN },
     is_sub_admin: { type: DataTypes.BOOLEAN, default: false },
+    access_json: { type: DataTypes.JSON, allowNull: true },
   });
 }; 
+ 
