@@ -8,7 +8,7 @@ exports.register = async (req, res) => {
   try {
     const { name, lastname, email, password, role } = req.body;
 
-    if (!email || !password || !role) {
+    if (!email || !password ) {
       return res.status(400).json({
         success: false,
         status: 400,
@@ -145,7 +145,7 @@ exports.adminlogin = async (req, res) => {
     } else {
       const user = await User.findOne({
         where: {
-          email, role: 3
+          email, role: 1
         }
       });
       if (!user) {
@@ -183,7 +183,7 @@ exports.adminlogin = async (req, res) => {
       });
     }
   } catch (err) {
-    console.error(err);
+    console.log(err);
     res.status(500).json({
       success: false,
       status: 500,
