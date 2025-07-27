@@ -1,5 +1,6 @@
 const { Category, Product } = require('../models');
 const slugify = require('../config/slugify');
+const { getPagination, getPagingData } = require('../config/common');
 
 // Create Category
 exports.createCategory = async (req, res) => {
@@ -168,7 +169,7 @@ exports.getAllCategories = async (req, res) => {
     const { limit, offset } = getPagination(page, size);
 
     const data = await Category.findAndCountAll({
-      where: { deletedAt: null, is_block: false },
+      where: { deletedAt: null },
 
       limit,
       offset,
